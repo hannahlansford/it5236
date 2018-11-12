@@ -24,7 +24,7 @@
 
 
 ?>
-	<div class="nav">
+	
 		<a href="index.php">Home</a>
 		&nbsp;&nbsp;
 		<?php if (!$loggedin) { ?>
@@ -48,5 +48,5 @@
 			&nbsp;&nbsp;
 
 		<?php } ?>
-	</div>
-	<h1>IT 5236</h1>
+		
+	<h1>Hannah's IT 5236 Project</h1>

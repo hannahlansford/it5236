@@ -55,16 +55,19 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 <html lang="en">
 <head>
 	<meta charset="utf-8">
-	<title>russellthackston.me</title>
-	<meta name="description" content="Russell Thackston's personal website for IT 5233">
-	<meta name="author" content="Russell Thackston">
+	<title>Hannah's IT5236 Site</title>
+	<meta name="description" content="Hannah Lansford's personal website for IT 5236">
+	<meta name="author" content="Hannah Lansford">
+	<!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css" integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
+	
 	<link rel="stylesheet" href="css/style.css">
-	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no">
 </head>
 
 <!--1. Display Errors if any exists 
 	2. If no errors display things -->
-<body>
+<body class="text-center">
 	<?php include 'include/header.php'; ?>
 	<h2>My Things</h2>
 	
@@ -79,7 +82,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 	</div>
 	<ul class="things">
 		<?php if (sizeof($things) == 0) { ?>
-		<li>No things found</li>
+		<li>Nothing found</li>
 		<?php } ?>
 		<?php foreach ($things as $thing) { ?>
 		<li>
@@ -91,7 +94,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 	</ul>
 	<div class="newthing">
 		<form enctype="multipart/form-data" method="post" action="list.php">
-			<input type="text" name="name" id="name" size="81" placeholder="Enter a thing name" value="<?php echo $name; ?>" />
+			<input type="text" name="name" id="name" size="50" placeholder="Enter a thing name" value="<?php echo $name; ?>" />
+			<br/>
 			<br/>
 			<label for="attachment">Add an image, PDF, etc.</label>
 			<input id="attachment" name="attachment" type="file">

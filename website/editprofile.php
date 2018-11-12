@@ -79,13 +79,16 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
 <html lang="en">
 <head>
 	<meta charset="utf-8">
-	<title>russellthackston.me</title>
-	<meta name="description" content="Russell Thackston's personal website for IT 5233">
-	<meta name="author" content="Russell Thackston">
+	<title>Hannah's IT5236 Site</title>
+	<meta name="description" content="Hannah Lansford's personal website for IT 5236">
+	<meta name="author" content="Hannah Lansford">
+	<!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css" integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
+	
 	<link rel="stylesheet" href="css/style.css">
-	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no">
 </head>
-<body>
+<body class="text-center">
 	<?php include 'include/header.php'; ?>
 
 	<h2>Edit Profile</h2>
@@ -95,11 +98,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
 	<div>
 		<form action="editprofile.php" method="post">
 			<input type="hidden" name="userid" value="<?php echo $userid; ?>" />
-			<input type="text" name="username" id="username" placeholder="Pick a username" value="<?php echo $username; ?>" />
+			<input type="text" name="username" id="username" placeholder="Pick a username" size="35" value="<?php echo $username; ?>" />
 			<br/>
-			<input type="password" name="password" id="password" placeholder="Enter a password" value="<?php echo $password; ?>" /> (optional)
+			<input type="password" name="password" id="password" placeholder="Enter a password" size="25" value="<?php echo $password; ?>" /> (optional)
 			<br/>
-			<input type="text" name="email" id="email" placeholder="Enter your email" size="40" value="<?php echo $email; ?>" />
+			<input type="text" name="email" id="email" placeholder="Enter your email" size="35" value="<?php echo $email; ?>" />
 			<?php if ($loggedinuserid != $userid) { ?>
 			<br/>
 			<input type="checkbox" name="isadmin" id="isadmin" <?php echo ($isadminFlag ? "checked=checked" : ""); ?> value="isadmin" />
