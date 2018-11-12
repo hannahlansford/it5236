@@ -953,7 +953,7 @@ class Application {
     }
     
     // Logs out the current user based on session ID
-    public function logout() {
+    /*public function logout() {
         
         $sessionid = $_COOKIE['sessionid'];
         
@@ -992,7 +992,52 @@ class Application {
             
         }
         
+    }*/
+	
+	public function logout() {
+		
+		$sessionid = $_COOKIE['sessionid'];
+		$url = "https://aox9i8z2cc.execute-api.us-east-1.amazonaws.com/default/logout?usersessionid=" . $sessionid;
+		$ch = curl_init();
+		curl_setopt($ch, CURLOPT_URL, $url);
+		curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-Type: application/json','Content-Length: ' . strlen($data_json), 'x-api-key: wvLLIByV3h91SZYoMndvfaDviPMPLl5m1IZoTmrt'));
+		curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'DELETE');
+		curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+		$response  = curl_exec($ch);
+		$httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+		
+		if ($response === FALSE) {
+			$errors[] = "An unexpected failure occurred contacting the web service.";
+		} else {
+			if($httpCode == 400) {
+				
+				// JSON was double-encoded, so it needs to be double decoded
+				$errorsList = json_decode(json_decode($response))->errors;
+				foreach ($errorsList as $err) {
+					$errors[] = $err;
+				}
+				if (sizeof($errors) == 0) {
+					$errors[] = "Bad input";
+				}
+			} else if($httpCode == 500) {
+				$errorsList = json_decode(json_decode($response))->errors;
+				foreach ($errorsList as $err) {
+					$errors[] = $err;
+				}
+				if (sizeof($errors) == 0) {
+					$errors[] = "Server error";
+				}
+			} else if($httpCode == 200) {
+				// Clear the session ID cookie
+                setcookie('sessionid', '', time()-3600);
+                $this->auditlog("logout", "successful: $sessionid");
+			}
+		}
+		
+		curl_close($ch);
     }
+
+
     
     // Checks for logged in user and redirects to login if not found with "page=protected" indicator in URL.
     public function protectPage(&$errors, $isAdmin = FALSE) {
