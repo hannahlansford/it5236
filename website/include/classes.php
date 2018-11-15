@@ -659,8 +659,56 @@ class Application {
         }
         
     }
-    
-    public function getUserRegistrations($userid, &$errors) {
+	
+	//New getuserregistrations with API
+	public function getUserRegistrations($userid, &$errors) {
+        
+        // Assume an empty list of regs
+        $regs = array();
+        
+		$url = "https://aox9i8z2cc.execute-api.us-east-1.amazonaws.com/default/userregistrations?userid=". $userid;
+		$ch = curl_init();
+		curl_setopt($ch, CURLOPT_URL, $url);
+		curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'GET');
+		curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+		$response  = curl_exec($ch);
+		$httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+		
+		if ($response === FALSE) {
+			$errors[] = "An unexpected failure occurred contacting the web service.";
+		} else {
+			if($httpCode == 400) {
+				
+				// JSON was double-encoded, so it needs to be double decoded
+				$errorsList = json_decode(json_decode($response))->errors;
+				foreach ($errorsList as $err) {
+					$errors[] = $err;
+				}
+				if (sizeof($errors) == 0) {
+					$errors[] = "Bad input";
+				}
+			} else if($httpCode == 500) {
+				$errorsList = json_decode(json_decode($response))->errors;
+				foreach ($errorsList as $err) {
+					$errors[] = $err;
+				}
+				if (sizeof($errors) == 0) {
+					$errors[] = "Server error";
+				}
+			} else if($httpCode == 200) {
+	            $this->auditlog("getUserRegistrations", "web service response => " . $response);
+				$regs = json_decode($response)->userregistrations;
+		        $this->auditlog("getUserRegistrations", "success");
+			}
+		}
+		
+		curl_close($ch);
+        // Return the list of users
+        return $regs;
+    }
+	
+    //Old get user registrations code
+    /*public function getUserRegistrations($userid, &$errors) {
         
         // Assume an empty list of regs
         $regs = array();
@@ -699,7 +747,7 @@ class Application {
         // Return the list of users
         return $regs;
     }
-    
+    */ 
     // Updates a single user in the database and will return the $errors array listing any errors encountered
     public function updateUserPassword($userid, $password, &$errors) {
         
@@ -755,7 +803,7 @@ class Application {
     
     // Removes the specified password reset entry in the database, as well as any expired ones
     // Does not retrun errors, as the user should not be informed of these problems
-    protected function clearPasswordResetRecords($passwordresetid) {
+    /*protected function clearPasswordResetRecords($passwordresetid) {
         
         $dbh = $this->getConnection();
         
@@ -770,10 +818,100 @@ class Application {
         // Close the connection
         $dbh = NULL;
         
+    } */
+	public function clearPasswordResetRecords() {
+		
+		$url = "https://aox9i8z2cc.execute-api.us-east-1.amazonaws.com/default/clearpasswordresetrecords?passwordresetid=" . $passwordresetid;
+		$ch = curl_init();
+		curl_setopt($ch, CURLOPT_URL, $url);
+		curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-Type: application/json','Content-Length: ' . strlen($data_json), 'x-api-key: wvLLIByV3h91SZYoMndvfaDviPMPLl5m1IZoTmrt'));
+		curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'DELETE');
+		curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+		$response  = curl_exec($ch);
+		$httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+		
+		if ($response === FALSE) {
+			$errors[] = "An unexpected failure occurred contacting the web service.";
+		} else {
+			if($httpCode == 400) {
+				
+				// JSON was double-encoded, so it needs to be double decoded
+				$errorsList = json_decode(json_decode($response))->errors;
+				foreach ($errorsList as $err) {
+					$errors[] = $err;
+				}
+				if (sizeof($errors) == 0) {
+					$errors[] = "Bad input";
+				}
+			} else if($httpCode == 500) {
+				$errorsList = json_decode(json_decode($response))->errors;
+				foreach ($errorsList as $err) {
+					$errors[] = $err;
+				}
+				if (sizeof($errors) == 0) {
+					$errors[] = "Server error";
+				}
+			} else if($httpCode == 200) {
+				// Clear the session ID cookie
+                $this->auditlog("logout", "successful: $passwordresetid");
+			}
+		}
+		
+		curl_close($ch);
     }
     
     // Retrieves an existing session from the database for the specified user
-    public function getSessionUser(&$errors, $suppressLog=FALSE) {
+    /*public function getSessionUser(&$errors, $suppressLog=FALSE) {
+        
+        // Get the session id cookie from the browser
+        $sessionid = NULL;
+        $user = NULL;
+        
+        // Check for a valid session ID
+        if (isset($_COOKIE['sessionid'])) {
+            
+            $sessionid = $_COOKIE['sessionid'];
+            
+            // Connect to the database
+            $dbh = $this->getConnection();
+            
+            // Construct a SQL statement to perform the insert operation
+            $sql = "SELECT usersessionid, usersessions.userid, email, username, usersessions.registrationcode, isadmin " .
+                "FROM usersessions " .
+                "LEFT JOIN users on usersessions.userid = users.userid " .
+                "WHERE usersessionid = :sessionid AND expires > now()";
+            
+            // Run the SQL select and capture the result code
+            $stmt = $dbh->prepare($sql);
+            $stmt->bindParam(":sessionid", $sessionid);
+            $result = $stmt->execute();
+            
+            // If the query did not run successfully, add an error message to the list
+            if ($result === FALSE) {
+                
+                $errors[] = "An unexpected error occurred";
+                $this->debug($stmt->errorInfo());
+                
+                // In order to prevent recursive calling of audit log function
+                if (!$suppressLog){
+                    $this->auditlog("session error", $stmt->errorInfo());
+                }
+                
+            } else {
+                
+                $user = $stmt->fetch(PDO::FETCH_ASSOC);
+                
+            }
+            
+            // Close the connection
+            $dbh = NULL;
+            
+        }
+        
+        return $user;
+        
+    }*/
+	public function getSessionUser(&$errors, $suppressLog=FALSE) {
         
         // Get the session id cookie from the browser
         $sessionid = NULL;
@@ -1508,81 +1646,55 @@ class Application {
     // Gets a single user from database and will return the $errors array listing any errors encountered
     public function getUser($userid, &$errors) {
         
-        // Assume no user exists for this user id
-        $user = NULL;
+        $user = $this->getSessionUser($errors);
+        $loggedinuserid = $user["userid"];
         
-        // Validate the user input
-        if (empty($userid)) {
-            $errors[] = "Missing userid";
-        }
-        
-        if(sizeof($errors)== 0) {
-            
-            // Get the user id from the session
-            $user = $this->getSessionUser($errors);
-            $loggedinuserid = $user["userid"];
-            $isadmin = FALSE;
-            
-            // Check to see if the user really is logged in and really is an admin
-            if ($loggedinuserid != NULL) {
-                $isadmin = $this->isAdmin($errors, $loggedinuserid);
-            }
-            
-            // Stop people from viewing someone else's profile
-            if (!$isadmin && $loggedinuserid != $userid) {
-                
-                $errors[] = "Cannot view other user";
-                $this->auditlog("getuser", "attempt to view other user: $loggedinuserid");
-                
-            } else {
-                
-                // Only try to insert the data into the database if there are no validation errors
-                if (sizeof($errors) == 0) {
-                    
-                    // Connect to the database
-                    $dbh = $this->getConnection();
-                    
-                    // Construct a SQL statement to perform the select operation
-                    $sql = "SELECT userid, username, email, isadmin FROM users WHERE userid = :userid";
-                    
-                    // Run the SQL select and capture the result code
-                    $stmt = $dbh->prepare($sql);
-                    $stmt->bindParam(":userid", $userid);
-                    $result = $stmt->execute();
-                    
-                    // If the query did not run successfully, add an error message to the list
-                    if ($result === FALSE) {
-                        
-                        $errors[] = "An unexpected error occurred retrieving the specified user.";
-                        $this->debug($stmt->errorInfo());
-                        $this->auditlog("getuser error", $stmt->errorInfo());
-                        
-                        // If the query did not return any rows, add an error message for invalid user id
-                    } else if ($stmt->rowCount() == 0) {
-                        
-                        $errors[] = "Bad userid";
-                        $this->auditlog("getuser", "bad userid: $userid");
-                        
-                        // If the query ran successfully and we got back a row, then the request succeeded
-                    } else {
-                        
-                        // Get the row from the result
-                        $user = $stmt->fetch();
-                        
-                    }
-                    
-                    // Close the connection
-                    $dbh = NULL;
-                    
-                } else {
-                    $this->auditlog("getuser validation error", $errors);
-                }
-            }
-        } else {
-            $this->auditlog("getuser validation error", $errors);
-        }
-        
-        // Return user if there are no errors, otherwise return NULL
+		$url = "https://aox9i8z2cc.execute-api.us-east-1.amazonaws.com/default/getuser?userid=".$loggedinuserid;
+		$ch = curl_init();
+		curl_setopt($ch, CURLOPT_URL, $url);
+		curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'GET');
+		curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+		$response  = curl_exec($ch);
+		$httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+		$this->debug($response);
+		$this->auditlog("getUser", "response = : $response");
+		
+		if ($response === FALSE) {
+			$errors[] = "An unexpected failure occurred contacting the web service.";
+		} else {
+			if($httpCode == 400) {
+				
+				// JSON was double-encoded, so it needs to be double decoded
+				$errorsList = json_decode(json_decode($response))->errors;
+				foreach ($errorsList as $err) {
+					$errors[] = $err;
+				}
+				if (sizeof($errors) == 0) {
+					$errors[] = "Bad input";
+				}
+			} else if($httpCode == 500) {
+				$errorsList = json_decode(json_decode($response))->errors;
+				foreach ($errorsList as $err) {
+					$errors[] = $err;
+				}
+				if (sizeof($errors) == 0) {
+					$errors[] = "Server error";
+				}
+			} else if($httpCode == 200) {
+	            $this->auditlog("getUser", "web service response => " . $response);
+				$user_object = json_decode($response);
+				$user = array(
+					"userid"=>$user_object->userid,
+					"username"=>$user_object->username,
+					"email"=>$user_object->email,
+					"isadmin"=>$user_object->isadmin
+					
+				);
+		        $this->auditlog("getUser", "success");
+			}
+		}
+		
+		curl_close($ch);
         return $user;
     }
     
